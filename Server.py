@@ -16,7 +16,18 @@ def index():
  
 @app.route('/echo/', methods=['GET'])
 def echo():
-	print('WORKING')
+
+	def write_to_file(path, data):
+		f = open(path, 'w')
+		f.write(str(data))
+		f.close()
+
+	def read_file_data(path):
+		f = open(path, 'r')
+		data = f.read()
+		f.close()
+
+		return data
 
 	league_id = request.args.get('echoValue')
 
@@ -40,26 +51,13 @@ def echo():
 		trades = json.dumps(activity_data.get_trade_data())
 		waivers = json.dumps(activity_data.get_waiver_data())
 
-		f = open(owner_file, 'w')
-		f.write(str(owners))
-		f.close()
-
-		f = open(games_file, 'w')
-		f.write(str(games))
-		f.close()
-
-		f = open(trades_file, 'w')
-		f.write(str(trades))
-		f.close()
-
-		f = open(waivers_file, 'w')
-		f.write(str(waivers))
-		f.close()
+		write_to_file(owner_file, owners)
+		write_to_file(games_file, games)
+		write_to_file(trades_file, trades)
+		write_to_file(waivers_file, waivers)
 
 	else:
-		f = open(owner_file, 'r')
-		owners = f.read()
-		f.close()
+		owners = read_file_data(owner_file)
 
 	return jsonify(owners)
 
