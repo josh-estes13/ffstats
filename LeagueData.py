@@ -1,49 +1,64 @@
 import sys
-import UrlBuilder
-from bs4 import BeautifulSoup
 import requests
-from collections import OrderedDict
 
 class LeagueData:
-	def __init__(self, league_id, season = '2017'):
+	def __init__(self, league_id, data_store, season = '2017'):
 		self.league_id = league_id
-		self.season_year = season
-		self.url_builder = UrlBuilder.UrlBuilder(league_id, season)
+		self.year = season
+		self.data_store = data_store
+		self.ENDPOINT = 'http://games.espn.com/ffl/api/v2/'
+		self.success = True
+		self.league_data()
 	
-	def get_league_members(self):
-		
-		def get_team_initials(team_page):
-			team_page_url = self.url_builder.team_page_url(team_page)
-			page = requests.get(team_page_url)
-			soup = BeautifulSoup(page.content, 'lxml')
+	def league_data(self):
+		request = self.request_data()
+		status = request.status_code
+		if status != 200:
+			self.success = False
 
-			team = soup.select('h3.team-name')[0]
-			initials = team.find('em').text
-			
-			initials = initials[:-1]
-			initials = initials[1:]
-			return initials
+		if self.success:
+			data = request.json()
+			league = data['leaguesettings']
+			self.store_league_data(league)
+			self.store_teams(league)
+
+	def store_league_data(self, league):
+		name = league['name']
+		scoring_period_id = league['firstScoringPeriodId']
+		matchup_count = league['regularSeasonMatchupPeriodCount']
+		position_slots = league['slotCategoryItems']
+
+		league_info = [self.league_id, self.year, name, scoring_period_id, matchup_count]
+		self.data_store.insert_league(league_info)
+
+	def store_teams(self, league):
+		def team_data(team):
+			team_info = [
+				self.league_id,
+				self.year,
+				team['teamId'],
+				team['teamAbbrev'],
+				team['teamLocation'] + ' ' + team['teamNickname'],
+				team.get('logoUrl', 'http://g.espncdn.com/lm-static/ffl17/images/default.svg'),
+				team['teamTransactions']['overallAcquisitionTotal'],
+				team['teamTransactions']['trades'],
+				team['record']['overallWins'],
+				team['record']['overallLosses'],
+				team['record']['pointsFor'],
+				team['record']['pointsAgainst'],
+				team['overallStanding']
+			]
+
+			return team_info
+
+		teams = league['teams']
+		for team in teams:
+			team_info = team_data(teams[team])
+			self.data_store.insert_team(team_info)
+
+	def request_data(self):
+		params = dict()
+		params['leagueId'] = self.league_id
+		params['seasonId'] = self.year
+		return requests.get('%sleagueSettings' % (self.ENDPOINT, ), params=params)
 		
-		owners = list()
-		
-		league_standings_url = self.url_builder.league_standings_url()
-		page = requests.get(league_standings_url)
-		soup = BeautifulSoup(page.content, 'lxml')
-		
-		owner_rows = soup.select('tr.tableBody')
-		ranking = 1
-		for owner_row in owner_rows:
-			owner_data = owner_row.select('td')
-			owner = dict()
-			owner['Rank'] = ranking
-			owner['Team'] = owner_data[0].find('a').text
-			owner['Page'] = owner_data[0].find('a')['href']
-			owner['Initials'] = get_team_initials(owner['Page'])
-			owner['Wins'] = owner_data[1].text
-			owner['Losses'] = owner_data[2].text
-			
-			owners.append(owner)
-			
-			ranking = ranking + 1
-		
-		return owners

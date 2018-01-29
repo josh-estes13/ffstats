@@ -1,108 +1,121 @@
 import sys
-import UrlBuilder
-from bs4 import BeautifulSoup
 import requests
+import DataStore
 
 class GameData:
-	def __init__(self, league_id, season = '2017'):
+	def __init__(self, league_id, data_store, year = '2017'):
 		self.league_id = league_id
-		self.season_year = season
-		self.url_builder = UrlBuilder.UrlBuilder(league_id, season)
-		
-	def get_game_data(self):
-		
-		def parse_player_table(table):
-			
-			def parse_player_row(player_row):
-				player_data_row = player_row.select('td.playertablePlayerName')[0].text
-				player_tokens = player_data_row.split(',')
-				
-				player_data = dict()
-				player_data['Points'] = player_row.select('td.playertableStat.appliedPoints')[0].text
-				
-				if(len(player_tokens) == 1):
-					player_tokens = player_tokens[0].split()
-					player_data['Name'] = player_tokens[0]
-					player_data['Team'] = player_tokens[1]
-					player_data['Position'] = player_tokens[2]
-					
-				else:
-					player_data['Name'] = player_tokens[0]
-					player_tokens = player_tokens[1].split()
-					player_data['Team'] = player_tokens[0]
-					player_data['Position'] = player_tokens[1]
-					
-				return player_data
-				
-			player_rows = table.select('tr.pncPlayerRow')
-			
-			player_data = dict()
-			for player_row in player_rows:
-				slot = player_row.select('td.playerSlot')[0].text
-				if slot not in player_data:
-					player_data[slot] = list()
+		self.year = year
+		self.data_store = data_store
+		self.ENDPOINT = 'http://games.espn.com/ffl/api/v2/'
+		self.success = True
+		self.game_data()
 
-				player_data[slot].insert(0, parse_player_row(player_row))
+	def game_data(self):
+		team_ids = self.data_store.select_team_ids(self.league_id, self.year)
+		last_matchup_id = self.data_store.select_league_matchup_ids(self.league_id, self.year)
 
-			return player_data
-		
-		def get_name(table):
-			name_row = table.select('tr.playerTableBgRowHead.tableHead.playertableTableHeader')[0]
-			name = name_row.find('td').text.replace(' Box Score', '')
-			return name
-		
-		league_schedule_url = self.url_builder.league_schedule_url()
-		page = requests.get(league_schedule_url)
-		soup = BeautifulSoup(page.content, 'lxml')
-		
-		schedule_table = soup.select('table.tableBody')[0]
-		table_rows = schedule_table.select('tr')
-		
-		game_data = list()
-		week_number = 0
-		game_number = 1
-		for table_row in table_rows:
-			if table_row.has_attr('class') and table_row['class'][0] == 'tableHead':
-				week_number = week_number + 1
-				game_number = 1
-			else:
-				contest_page = table_row.select('nobr')
-				if len(contest_page) != 0:
-					contest = contest_page[0].find('a')
-					link = contest['href']
-					link_text = contest.text
-					
-					if link_text != 'Preview' and link_text != 'Box':
-						contest_link = self.url_builder.contest_url(link)
-						page = requests.get(contest_link)
-						soup = BeautifulSoup(page.content, 'lxml')
-						
-						week_data = dict()
-						table = soup.find('table', id='playertable_0')
-						week_data['Name'] = get_name(table)
-						week_data['Starters'] = parse_player_table(table)
-						
-						table = soup.find('table', id='playertable_1')
-						week_data['Bench'] = parse_player_table(table)
-						game_data.insert(0, week_data)
-						
-						week_data = dict()
-						table = soup.find('table', id='playertable_2')
-						week_data['Week'] = week_number
-						week_data['GameId'] = game_number
-						week_data['Name'] = get_name(table)
-						week_data['Starters'] = parse_player_table(table)
-						
-						table = soup.find('table', id='playertable_3')
-						week_data['Bench'] = parse_player_table(table)
-						game_data.insert(0, week_data)
-						
-						game_number = game_number + 1
-			
-		return game_data
+		pro_games = dict()
+		games = list()
+		for team_id in team_ids:
+			for i in range(0, last_matchup_id):
+				matchup_period_id = i + 1
+				request = self.request_data(matchup_period_id, team_id)
 
-	def get_expected_wins(self, game_data):
+				status = request.status_code
+				if status != 200:
+					self.success = False
 
-		pass
+				if self.success:
+					data = request.json()
+					boxscore = data['boxscore']
+					teams = boxscore['teams']
+					progames = boxscore['progames']
 
+					matchups = list()
+					rosters = list()
+					eligibles = list()
+					players = list()
+					for team in teams:
+						if team['team']['teamId'] == team_id:
+							matchups_data = self.matchup_data(boxscore, team, team_id)
+							rosters_data, positions_data = self.roster_data(boxscore, team, team_id)
+							players_data = self.player_data(team)
+							matchups.append(tuple(matchups_data))
+							rosters.append(tuple(rosters_data))
+							eligibles.append(tuple(positions_data))
+							players.append(tuple(players_data))
 
+					for game_id in progames:
+						if game_id not in pro_games:
+							pro_games[game_id] = self.pro_game_data(progames[game_id], matchup_period_id)
+
+					self.data_store.insert_matchup_data(matchups)
+					self.data_store.insert_roster_data(rosters)
+					self.data_store.insert_eligible_data(eligibles)
+					self.data_store.insert_player_data(players)
+
+		if self.success:
+			for game_id in pro_games:
+				games.append(tuple(pro_games[game_id]))
+			self.data_store.insert_pro_game_data(games)
+
+	def matchup_data(self, boxscore, team, team_id):
+		teams = boxscore['teams']
+		matchup_period = boxscore['matchupPeriodId']
+		scoring_period = boxscore['scoringPeriodId']
+		points = team['appliedActiveRealTotal']
+		matchup = (self.league_id, self.year, team_id, matchup_period, scoring_period, points)
+		return matchup
+
+	def roster_data(self, boxscore, team, team_id):
+		players = list()
+		positions = list()
+		roster_slot = tuple()
+		slots = team['slots']
+		for slot in slots:
+			matchup_period = boxscore['matchupPeriodId']
+			player = slot.get('player', False)
+			if player is not False:
+				player_id = player['playerId']
+				points = slot['currentPeriodRealStats'].get('appliedStatTotal', 0.00)
+				projected_points = slot['currentPeriodProjectedStats'].get('appliedStatTotal', 0.00)
+				slot_id = slot['slotCategoryId']
+				eligible_slot_data = player['eligibleSlotCategoryIds']
+				for position in eligible_slot_data:
+					eligible_slot = (self.league_id, self.year, team_id, player_id, position, matchup_period)
+					positions.append(tuple(eligible_slot))
+				roster_slot = (self.league_id, self.year, team_id, matchup_period, player_id, points, slot_id, projected_points)
+			players.append(tuple(roster_slot))
+		return players, positions
+
+	def player_data(self, team):
+		players = list()
+		player_info = tuple()
+		slots = team['slots']
+		for slot in slots:
+			player = slot.get('player', False)
+			if player is not False:
+				player_id = player['playerId']
+				first = player['firstName']
+				last = player['lastName']
+				position = player['defaultPositionId']
+				team_id = player['proTeamId']
+				player_info = (player_id, first, last, position, team_id)
+			players.append(tuple(player_info))
+		return players
+
+	def pro_game_data(self, game, matchup_period_id):
+		game_id = game['gameId']
+		away_team_id = game['awayProTeamId']
+		home_team_id = game['homeProTeamId']
+		date = game['gameDate']
+		return (self.league_id, self.year, game_id, matchup_period_id, away_team_id, home_team_id, date)
+
+	def request_data(self, matchup_period_id, team_id):
+		params = dict()
+		params['leagueId'] = self.league_id
+		params['seasonId'] = self.year
+		params['matchupPeriodId'] = matchup_period_id
+		params['teamId'] = team_id
+		return requests.get('%sboxscore' % (self.ENDPOINT, ), params=params)
