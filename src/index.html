@@ -1,0 +1,221 @@
+<!--
+ * CoreUI - Open Source Bootstrap Admin Template
+ * @version v1.0.9
+ * @link http://coreui.io
+ * Copyright (c) 2018 creativeLabs Łukasz Holeczek
+ * @license MIT
+ -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="CoreUI - Open Source Bootstrap Admin Template">
+  <meta name="author" content="Łukasz Holeczek">
+  <meta name="keyword" content="Bootstrap,Admin,Template,Open,Source,AngularJS,Angular,Angular2,Angular 2,Angular4,Angular 4,jQuery,CSS,HTML,RWD,Dashboard,React,React.js,Vue,Vue.js">
+  <link rel="shortcut icon" href="img/favicon.png">
+  <title>ffstats - ESPN Fantasy Football League Analysis</title>
+
+  <!-- Icons -->
+  <link href="../node_modules/flag-icon-css/css/flag-icon.min.css" rel="stylesheet">
+  <link href="../node_modules/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+  <link href="../node_modules/simple-line-icons/css/simple-line-icons.css" rel="stylesheet">
+
+  <!-- Main styles for this application -->
+  <link href="../css/style.css" rel="stylesheet">
+  <!-- Styles required by this views -->
+
+</head>
+<body class="app header-fixed sidebar-fixed aside-menu-fixed aside-menu-hidden">
+  <header class="app-header navbar ">
+    <button class="navbar-toggler mobile-sidebar-toggler d-lg-none mr-auto" type="button">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <a class="navbar-brand" href="#"></a>
+  </header>
+
+  <div class="container app flex-row align-items-center" id="league-id-form">
+    <div class="row justify-content-center">
+      <div class="col-md-8" align="center">
+        <div class="card">
+          <div class="card-body">
+            <div class="row">
+              <div class="col-sm-12">
+                <h1 class="card-title mb-0">ESPN League Analysis</h1>
+                <div class="small text-muted">Search by League ID</div>
+              </div>
+            </div>
+            <br>
+            <div class="row">
+              <div class="col-lg-12">
+                <div class="input-group mb-3">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text"></span>
+                  </div>
+                  <input type="text" class="form-control" id="league-id-input" name="league-id-input" placeholder="League ID">
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-lg-12">
+                <div>
+                  <button type="button" data-toggle="modal" data-target="#searching-modal" class="btn btn-primary px-4" id="league-search-btn">Go</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer bg-primary">
+            <img src="/img/leagueId.png" style="width:100%; max-width:100%; height:auto;">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal fade" id="searching-modal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true" data-keyboard="false" data-backdrop="static">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title"></h4>
+        </div>
+        <div class="modal-body">
+          <p id="progress-status">Searching for your league...</p>
+          <div id="sub-text" class="small text-muted">This could take a minute on the initial analysis</div>
+          <div class="progress">
+            <div id="progressbar" class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="error-modal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true" data-keyboard="false" data-backdrop="static">
+    <div class="modal-dialog modal-danger" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title">Error</h4>
+        </div>
+        <div class="modal-body">
+          <p>League Not Found</p>
+          <div id="sub-text" class="small text-muted">Make sure you entered your league ID correctly and confirm that your league is public</div>
+        </div>
+        <div class="modal-footer" id="invalid-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="#error-modal"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap and necessary plugins -->
+  <script src="../node_modules/jquery/dist/jquery.min.js"></script>
+  <script src="../node_modules/popper.js/dist/umd/popper.min.js"></script>
+  <script src="../node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+  <script src="../node_modules/pace-progress/pace.min.js"></script>
+
+  <!-- Plugins and scripts required by all views -->
+  <script src="../node_modules/chart.js/dist/Chart.min.js"></script>
+
+  <!-- CoreUI main scripts -->
+
+  <script src="../js/app.js"></script>
+
+  <script type=text/javascript>
+    ( function( $ ) {
+
+      $( '#league-search-btn' ).on( 'click', function( e ) {
+
+        leagueId = $( 'input[name="league-id-input"]' ).val();
+
+        $.ajax({
+          type: "GET",
+          url: "/status/",
+          contentType: "application/json; charset=utf-8",
+          data: { leagueId: leagueId },
+          success: function( data ) {
+
+            var progressText = document.getElementById( 'progress-status' );
+            var progressPercentage = 0;
+
+            if( data['leagueStatus'] ) {
+              progressText.innerHTML = '';
+              progressText.appendChild( document.createTextNode( 'League Found' ) );
+
+              if( data['stored'] )
+              {
+                var timerId, percent;
+                // reset progress bar
+                percent = 0;
+                $( '#progressbar' ).attr( 'style', 'width: ' + percent + '%' );
+                $( '#progressbar' ).attr( 'aria-valuenow', percent );
+
+
+                timerId = setInterval( function() {
+                  // increment progress bar
+                  percent += 1;
+                  $( '#progressbar' ).attr( 'style', 'width: ' + percent + '%' );
+                  $( '#progressbar' ).attr( 'aria-valuenow', percent );
+
+                  // complete
+                  if (percent >= 100) {
+                    clearInterval(timerId);
+                    window.location.href = '/league/?leagueId=' + leagueId;
+                  }
+
+                }, 10);
+              }
+              else
+              {
+                var timerId, percent;
+                // reset progress bar
+                percent = 0;
+                $( '#progressbar' ).attr( 'style', 'width: ' + percent + '%' );
+                $( '#progressbar' ).attr( 'aria-valuenow', percent );
+
+
+                timerId = setInterval( function() {
+                  // increment progress bar
+                  percent += 1;
+                  $( '#progressbar' ).attr( 'style', 'width: ' + percent + '%' );
+                  $( '#progressbar' ).attr( 'aria-valuenow', percent );
+
+                  if( percent > 5 && percent < 30 ) {
+                    progressText.innerHTML = '';
+                    progressText.appendChild( document.createTextNode( 'Compiling League Data' ) );
+                  }
+
+                  if( percent > 30 && percent < 85 ) {
+                    progressText.innerHTML = '';
+                    progressText.appendChild( document.createTextNode( 'Analyzing Results' ) );
+                  }
+
+                  if( percent > 85) {
+                    progressText.innerHTML = '';
+                    progressText.appendChild( document.createTextNode( 'Finalizing...' ) );
+                  }
+
+                  // complete
+                  if (percent >= 100) {
+                    clearInterval(timerId);
+                    window.location.href = '/league/?leagueId=' + leagueId;
+                  }
+
+                }, 1000);
+              }
+            }
+            else 
+            {
+              $( '#searching-modal' ).modal( 'toggle' );
+              $( '#error-modal' ).modal( 'toggle' );
+            }
+          }
+        });
+      });
+    })( jQuery );
+  </script>
+
+</body>
+</html>

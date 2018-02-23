@@ -1,0 +1,881 @@
+<!--
+ * CoreUI - Open Source Bootstrap Admin Template
+ * @version v1.0.9
+ * @link http://coreui.io
+ * Copyright (c) 2018 creativeLabs Łukasz Holeczek
+ * @license MIT
+ -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="CoreUI - Open Source Bootstrap Admin Template">
+  <meta name="author" content="Łukasz Holeczek">
+  <meta name="keyword" content="Bootstrap,Admin,Template,Open,Source,AngularJS,Angular,Angular2,Angular 2,Angular4,Angular 4,jQuery,CSS,HTML,RWD,Dashboard,React,React.js,Vue,Vue.js">
+  <link rel="shortcut icon" href="img/favicon.png">
+  <title>LeagueStats - ESPN Fantasy Football League Analysis</title>
+
+  <!-- Icons -->
+  <link href="../node_modules/flag-icon-css/css/flag-icon.min.css" rel="stylesheet">
+  <link href="../node_modules/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+  <link href="../node_modules/simple-line-icons/css/simple-line-icons.css" rel="stylesheet">
+
+  <!-- Main styles for this application -->
+  <link href="../css/style.css" rel="stylesheet">
+  <!-- Styles required by this views -->
+</head>
+
+<body class="app header-fixed sidebar-fixed aside-menu-fixed aside-menu-hidden">
+  <header class="app-header navbar">
+    <button class="navbar-toggler mobile-sidebar-toggler d-lg-none mr-auto" type="button">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <a class="navbar-brand" href="#"></a>
+  </header>
+
+  <div class="app-body">
+    <div class="sidebar">
+      <button class="sidebar-minimizer brand-minimizer" type="button"></button>
+      <nav class="sidebar-nav">
+        <ul class="nav">
+          <li class="nav-item">
+            <a href="/" class="nav-link" id="new-league-link"><i class="icon-magnifier"></i> New League</a>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link" id="league-home-link"><i class="icon-home"></i> League Home</a>
+          </li>
+          <li class="nav-item nav-dropdown">
+            <a class="nav-link nav-dropdown-toggle" href="#"><i class="icon-list"></i> Teams</a>
+            <ul class="nav-dropdown-items" id="teams-nav-container">
+            </ul>
+          </li>
+          <li class="nav-item nav-dropdown">
+            <a class="nav-link nav-dropdown-toggle" href="#"><i class="icon-badge"></i> Rankings</a>
+            <ul class="nav-dropdown-items" id="rankings-nav-container">
+            </ul>
+          </li>
+        </ul>
+      </nav>
+    </div>
+
+    <!-- Main content -->
+    <main class="main">
+
+      <!-- Breadcrumb -->
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item" id=league-name></li>   
+      </ol>
+
+      <div class="container-fluid">
+
+        <div class="animated fadeIn">
+
+          <div class="card">
+            <div class="card-body">
+              <div class="row">
+                <div class="col-12">
+                  <h4 class="card-title mb-0" id="team-name"></h4>
+                  <div class="small text-muted" id="team-standing"></div>
+                  <div class="small text-muted" id="team-record"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-sm-6 col-lg-3">
+              <div class="card text-white bg-primary">
+                <div class="card-body pb-0">
+                  <div class="row">
+                    <div class="col">
+                      <h4 class="mb-0" id="record-card"></h4>
+                      <p>Expected Record</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!--/.col-->
+
+            <div class="col-sm-6 col-lg-3">
+              <div class="card text-white bg-primary">
+                <div class="card-body pb-0">
+                  <h4 class="mb-0" id="total-trade-card"></h4>
+                  <p>Total Trades</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-sm-6 col-lg-3">
+              <div class="card text-white bg-primary">
+                <div class="card-body pb-0">
+                  <h4 class="mb-0" id="total-additions-card"></h4>
+                  <p>Total Additions</p>
+                </div>
+              </div>
+            </div>
+            <!--/.col-->
+
+            <div class="col-sm-6 col-lg-3">
+              <div class="card text-white bg-primary">
+                <div class="card-body pb-0">
+                  <h4 class="mb-0" id="points-missed-card"></h4>
+                  <p>Points Missed</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!--/.row-->
+
+          <div class="card">
+            <div class="card-body">
+              <div class="row">
+                <div class="col-sm-5">
+                  <h4 class="card-title mb-0">Matchup Scores</h4>
+                  <div class="small text-muted">2017</div>
+                </div>
+              </div>
+              <div class="chart-wrapper" style="height:300px;margin-top:40px;">
+                <canvas id="matchup-chart" class="chart" height="300"></canvas>
+              </div>
+            </div>
+            <div class="card-footer">
+              <ul>
+                <li>
+                  <div class="text-muted">Best Score</div>
+                  <strong id="best-score"></strong>
+                  <div class="progress progress-xs mt-2">
+                    <div class="progress-bar bg-info" role="progressbar" style="width: 100%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
+                </li>
+                <li>
+                  <div class="text-muted">Worst Score</div>
+                  <strong id="worst-score"></strong>
+                  <div class="progress progress-xs mt-2">
+                    <div class="progress-bar bg-info" role="progressbar" style="width: 100%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
+                </li>
+                <li class="d-none d-md-table-cell">
+                  <div class="text-muted">Average Score</div>
+                  <strong id="average-score"></strong>
+                  <div class="progress progress-xs mt-2">
+                    <div class="progress-bar bg-info" role="progressbar" style="width: 100%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
+                </li>
+                <li class="d-none d-md-table-cell">
+                  <div class="text-muted">Average Points Missed</div>
+                  <strong id="average-points-missed"></strong>
+                  <div class="progress progress-xs mt-2">
+                    <div class="progress-bar bg-info" role="progressbar" style="width: 100%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <!--/.card-->
+
+          <div class="card">
+            <div class="card-body">
+              <div class="row">
+                <div class="col-sm-5">
+                  <h4 class="card-title mb-0">Matchup Scores</h4>
+                  <div class="small text-muted">2017</div>
+                </div>
+              </div>
+              <div class="chart-wrapper" style="height:300px;margin-top:40px;">
+                <canvas id="position-scores-chart" class="chart" height="300"></canvas>
+              </div>
+            </div>
+          </div>
+
+          
+          <div class="row">
+            <div class="col-lg-6">
+              <div class="card">
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-sm-5">
+                      <h4 class="card-title mb-0">Points Scored</h4>
+                      <div class="small text-muted">2017</div>
+                    </div>
+                  </div>
+                  <div class="chart-wrapper" style="height:300px;margin-top:40px;">
+                    <canvas id="point-breakdown-chart" class="chart" height="300"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-6">
+              <div class="card">
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-sm-5">
+                      <h4 class="card-title mb-0" id="player-points-title">Projected Points</h4>
+                      <div class="small text-muted">2017</div>
+                    </div>
+                    <div class="chart-wrapper" style="height:300px;margin-top:40px;">
+                      <canvas id="point-breakdown-chart" class="chart" height="300"></canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-12">
+              <div class="card">
+                <div class="card-header">
+                  Games
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-lg-3 col-sm-3">
+                      <div class="dropdown">
+                        <button id="selected" class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                          Choose Matchup
+                        </button>
+                        <div id="matchup-period-dropdown" class="dropdown-menu" aria-labelledby="dropdownMenu2">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-lg-6 col-sm-12">
+                      <hr class="mt-0">
+                      <ul class="horizontal-bars type-2">
+                        <li>
+                          <i class="icon-user"></i>
+                          <span class="title">Actual Score</span>
+                          <span class="value" id="actual-score-value"></span>
+                          <div class="bars">
+                            <div class="progress progress-xs">
+                              <div id="actual-score-progress" class="progress-bar bg-warning" role="progressbar" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                          </div>
+                        </li>
+                        <li>
+                          <i class="icon-user-female"></i>
+                          <span class="title">Potential Score</span>
+                          <span class="value" id="potential-score-value"></span>
+                          <div class="bars">
+                            <div class="progress progress-xs">
+                              <div class="progress-bar bg-warning" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                          </div>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-sm-12 col-lg-6">
+                      <br>
+                      <h4 class="card-title mb-0">Lineup</h4>
+                      <hr class="mt-0">
+                      <table class="table table-responsive-sm table-sm">
+                        <tbody id="lineup-table">
+                        </tbody>
+                      </table>
+                    </div>
+                    <!--/.col-->
+                    <div class="col-sm-12 col-lg-6">
+                      <br>
+                      <h4 class="card-title mb-0">Optimal Lineup</h4>
+                      <hr class="mt-0">
+                      <table class="table table-responsive-sm table-sm">
+                        <tbody id="optimal-lineup-table">
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-lg-12">
+              <div class="card">
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-sm-12">
+                      <h4 class="card-title mb-0">Trade Results</h4>
+                      <div class="small text-muted">2017</div>
+                    </div>
+                  </div>
+                  <br>
+                  <div>
+                    <table class="table table-responsive-sm table-sm" id="trade-list-table">
+                      <thead>
+                        <tr>
+                          <th></th>
+                          <th>Player</th>
+                          <th class="text-center">Position</th>
+                          <th class="text-center">Team</th>
+                          <th class="text-center">Points Since Trade</th>
+                        </tr>
+                      </thead>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-lg-12">
+              <div class="card">
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-sm-12">
+                      <h4 class="card-title mb-0">Players Started</h4>
+                      <div class="small text-muted">2017</div>
+                    </div>
+                  </div>
+                  <br>
+                  <div>
+                    <table class="table table-responsive-sm table-sm">
+                      <thead>
+                        <tr>
+                          <th class="text-center"></th>
+                          <th>Player</th>
+                          <th class="text-center">Points</th>
+                          <th class="text-center">Projected</th>
+                          <th class="text-center">Games Started</th>
+                          <th class="text-center">Average</th>
+                        </tr>
+                      </thead>
+                      <tbody id="player-list-table">
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <footer class="app-footer">
+    <span><a href="http://coreui.io">Fantasy Stats</a> © 2018 creativeLabs.</span>
+    <span class="ml-auto">Powered by <a href="http://coreui.io">CoreUI</a></span>
+  </footer>
+
+  <!-- Custom scripts required by this view -->
+  <script type=text/javascript>
+    var $LEAGUE_ID = {{ leagueId|tojson|safe }};
+    var $TEAM_ID = {{ teamId|tojson|safe }};
+  </script>
+
+  <script src="../node_modules/jquery/dist/jquery.min.js"></script>
+  <script src="../node_modules/popper.js/dist/umd/popper.min.js"></script>
+  <script src="../node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+  <script src="../node_modules/pace-progress/pace.min.js"></script>
+  <script src="../node_modules/chart.js/dist/Chart.min.js"></script>
+
+  <!-- CoreUI main scripts -->
+  <script src="../js/app.js"></script>
+
+    <!-- Plugins and scripts required by all views -->
+  <script src="../js/views/main.js"></script>
+
+  <script type="text/javascript">
+    function convertHex( hex, opacity ){
+      hex = hex.replace( '#', '' );
+      var r = parseInt( hex.substring(0,2), 16 );
+      var g = parseInt( hex.substring(2,4), 16 );
+      var b = parseInt( hex.substring(4,6), 16 );
+
+      var result = 'rgba('+r+','+g+','+b+','+opacity/100+')';
+      return result;
+  }
+  </script>
+
+  <script type="text/javascript">
+    function createScoreChart( teamScores, leagueMedianScores, optimalScores ) {
+      function getScores( scoresByMatchup ) {
+        var scoresData = [];
+        var i = 0;
+        for( var x in scoresByMatchup ) {
+          scoresData[i] = scoresByMatchup[x];
+          i++;
+        }
+
+        return scoresData;
+      }
+      var data = {
+        labels: Object.keys(teamScores),
+        datasets: [
+          {
+            label: 'Team Score',
+            backgroundColor: convertHex($.brandInfo,10),
+            borderColor: $.brandInfo,
+            pointHoverBackgroundColor: '#fff',
+            borderWidth: 2,
+            data: getScores( teamScores )
+          },
+          {
+            label: 'League Median',
+            backgroundColor: 'transparent',
+            borderColor: $.brandSuccess,
+            pointHoverBackgroundColor: '#fff',
+            borderWidth: 2,
+            data: getScores( leagueMedianScores )
+          },
+          {
+            label: 'Best Possible Score',
+            backgroundColor: 'transparent',
+            borderColor: $.brandDanger,
+            pointHoverBackgroundColor: '#fff',
+            borderWidth: 1,
+            borderDash: [8, 5],
+            data: getScores( optimalScores )
+          }
+        ]
+      };
+
+      var options = {
+        maintainAspectRatio: false,
+        legend: {
+          display: true
+        },
+        scales: {
+          xAxes: [{
+            gridLines: {
+              drawOnChartArea: false,
+            }
+          }],
+          yAxes: [{
+            ticks: {
+              beginAtZero: true,
+              maxTicksLimit: 5,
+              stepSize: Math.ceil(250 / 5),
+              max: 250
+            }
+          }]
+        },
+        elements: {
+          point: {
+            radius: 0,
+            hitRadius: 10,
+            hoverRadius: 4,
+            hoverBorderWidth: 3,
+          }
+        },
+      };
+      var ctx = $('#matchup-chart');
+      var mainChart = new Chart(ctx, {
+        type: 'line',
+        data: data,
+        options: options
+      });
+    }
+  </script>
+
+  <script type="text/javascript">
+    function createPositionScoreChart( teamScores, leagueMedianScores ) {
+      function getScores( scoresByMatchup ) {
+        var scoresData = [];
+        var i = 0;
+        for( var x in scoresByMatchup ) {
+          scoresData[i] = scoresByMatchup[x];
+          i++;
+        }
+
+        return scoresData;
+      }
+      var data = {
+        labels: Object.keys(teamScores),
+        datasets: [
+          {
+            label: 'Team Score',
+            backgroundColor: convertHex( $.brandPrimary, 100 ),
+            borderColor: $.brandPrimary,
+            pointHoverBackgroundColor: '#fff',
+            borderWidth: 2,
+            data: getScores( teamScores )
+          },
+          {
+            label: 'League Average',
+            backgroundColor: convertHex( $.brandSuccess, 100 ),
+            borderColor: $.brandSuccess,
+            pointHoverBackgroundColor: '#fff',
+            borderWidth: 2,
+            data: getScores( leagueMedianScores )
+          }
+        ]
+      };
+
+      var options = {
+        maintainAspectRatio: false,
+        legend: {
+          display: true
+        },
+        scales: {
+          xAxes: [{
+            gridLines: {
+              drawOnChartArea: false,
+            }
+          }],
+          yAxes: [{
+            ticks: {
+              beginAtZero: true,
+              maxTicksLimit: 5,
+              stepSize: Math.ceil( 25 / 5 ),
+              max: 25
+            }
+          }]
+        },
+        elements: {
+          point: {
+            radius: 0,
+            hitRadius: 10,
+            hoverRadius: 4,
+            hoverBorderWidth: 3,
+          }
+        },
+      };
+      var ctx = $( '#position-scores-chart' );
+      var mainChart = new Chart(ctx, {
+        type: 'bar',
+        data: data,
+        options: options
+      });
+    }
+  </script>
+
+  <script type="text/javascript">
+    function createPointBreakdownChart( points ) {
+      function getScores( points ) {
+        var scoresData = [];
+        var i = 0;
+        for( var x in points ) {
+          scoresData[i] = points[x];
+          i++;
+        }
+        return scoresData;
+      }
+      var data = {
+        labels: ['Points from Draft', 'Points from Trades', 'Points from Adds'],
+        datasets: [
+          {
+            label: 'Team Score',
+            backgroundColor: [
+                convertHex( $.brandPrimary, 100 ),
+                convertHex( $.brandWarning, 100 ),
+                convertHex( $.brandSuccess, 100 ),
+            ],
+            borderColor: [
+                $.brandPrimary,
+                $.brandWarning,
+                $.brandSuccess,
+            ],
+            pointHoverBackgroundColor: '#fff',
+            borderWidth: 2,
+            data: getScores( points )
+          }
+        ]
+      };
+
+      var options = {
+        responsive: true,
+        maintainAspectRatio: false,
+        legend: {
+          display: true
+        },
+        animation: {
+            animateScale: true,
+            animateRotate: true
+        },
+        elements: {
+          point: {
+            radius: 0,
+            hitRadius: 10,
+            hoverRadius: 4,
+            hoverBorderWidth: 3,
+          }
+        },
+      };
+      var ctx = $('#point-breakdown-chart');
+      var mainChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: data,
+        options: options
+      });
+    }
+  </script>
+
+  <script type="text/javascript">
+    function setCardData( card, data ) {
+      var card = document.getElementById( card );
+      var textNode = document.createTextNode( data );
+      card.appendChild( textNode );
+    }
+  </script>
+
+  <script type="text/javascript">
+    (function( $ ) {
+
+      $( '#team-data' ).hide();
+
+      var leagueId = $LEAGUE_ID;
+      var teamId = $TEAM_ID;
+
+      $( '#league-home-link' ).attr( 'href', '/league/?leagueId=' + leagueId );
+
+      $.ajax({
+        type: "GET",
+        url: "/data/",
+        contentType: "application/json; charset=utf-8",
+        data: { id: leagueId, team: teamId },
+        success: function( data ) {
+
+          var teamName = data['teamData']['team'];
+          var initials = data['teamData']['initials'];
+          var record = '(' + data['teamData']['wins'] + ' - ' + data['teamData']['losses'] + ')';
+          var standing = 'Standing: ' + data['teamData']['rank'];
+
+          var optimalLineups = data['optimalLineups'];
+          var teamLineups = data['teamLineups'];
+
+          var teamScores = data['leagueAveragesData']['teamScores'];
+          var leagueMedianScores = data['leagueAveragesData']['leagueMedianScores'];
+
+          var pointsMissed = 0.0;
+          var optimalScores = {};
+          for( var matchup in optimalLineups ) {
+            optimalScores[matchup] = 0.0;
+            for( var slot in optimalLineups[matchup] ) {
+              for( var i = 0; i < optimalLineups[matchup][slot].length; i++ ) {
+                optimalScores[matchup] += optimalLineups[matchup][slot][i]['points'];
+              }
+            }
+            pointsMissed += ( optimalScores[matchup] - teamScores[matchup] );
+          }
+
+          var expectedWins = data['expectedRecordData']['expectedWins'];
+          var expectedLosses = data['expectedRecordData']['expectedLosses'];
+          setCardData( 'record-card', '(' + expectedWins + ' - ' + expectedLosses + ')' );
+
+          var trades = data['teamData']['trades'];
+          setCardData( 'total-trade-card', trades );
+
+          var additions = data['teamData']['transactions'];
+          setCardData( 'total-additions-card', additions );
+
+          setCardData( 'points-missed-card', ( Math.round( pointsMissed * 100 ) / 100 ) );
+
+          setCardData( 'team-name', teamName + ' (' + initials + ')' );
+          setCardData( 'team-standing', standing );
+          setCardData( 'team-record', record );
+
+          createScoreChart( teamScores, leagueMedianScores, optimalScores );
+
+          function getScores( scores ) {
+            var scoresData = [];
+            var i = 0;
+            for( var x in scores ) {
+              scoresData[i] = scores[x];
+              i++;
+            }
+            return scoresData
+          }
+
+          var scores = getScores( teamScores );
+
+          setCardData( 'best-score', Math.max.apply( Math, scores ) );
+          setCardData( 'worst-score', Math.min.apply( Math, scores ) );
+
+          let sum = scores.reduce( ( previous, current ) => current += previous );
+          let avg = sum / scores.length;
+          setCardData( 'average-score', Math.round( avg * 100 ) / 100 );
+
+          setCardData( 'average-points-missed', Math.round( ( pointsMissed / scores.length ) * 100 ) / 100 );
+
+          var teamPositionScores = data['leagueAveragesData']['teamScoresByPosition'];
+          var leaguePositionScores = data['leagueAveragesData']['leagueScoresByPosition'];
+          createPositionScoreChart( teamPositionScores, leaguePositionScores );
+
+          var pointsBreakdown = data['transactionData']['pointsBreakdown'];
+          createPointBreakdownChart( pointsBreakdown );
+
+          var tradedPlayers = data['transactionData']['tradePlayers'];
+          var addedPlayers = data['transactionData']['waiverPlayers'];
+          var playerList = data['transactionData']['playerList'];
+
+          var tableContainer = $( '#player-list-table' );
+          var playerListHtml = '';
+
+          for( var player in playerList ) {
+            if( playerList[player]['starts'] > 0 ) {
+              playerListHtml += '<tr><td class="text-center"><div class="avatar">';
+              playerListHtml += '<img src="' + playerList[player]['image'] + '" class="img-avatar">';
+              playerListHtml += '</div></td><td>';
+              playerListHtml += '<div>' + playerList[player]['firstName'] + ' ' + playerList[player]['lastName'] + '</div>';
+              playerListHtml += '<div class="small text-muted">';
+              playerListHtml += '<span>' + playerList[player]['position'] + '</span> | ' + playerList[player]['city'] + ' ' + playerList[player]['teamName'];
+              playerListHtml += '</div></td><td class="text-center"><div>' + playerList[player]['points'] + '</div>';
+              playerListHtml += '</td>';
+
+              playerListHtml += '<td class="text-center"><div>' + playerList[player]['projected'] + '</div>';
+              playerListHtml += '</td>';
+
+              playerListHtml += '<td class="text-center"><div>' + playerList[player]['starts'] + '</div>';
+              playerListHtml += '</td>';
+
+
+              var average = parseFloat( playerList[player]['points'] / playerList[player]['starts'] );
+              average = Math.round( ( average * 100 ) / 100 );
+
+              playerListHtml += '<td class="text-center"><div>' + average + '</div>';
+              playerListHtml += '</td></tr>';
+            }
+          }
+
+          tableContainer.html( playerListHtml );
+
+          setLineups( 1 );
+
+          var tradeTable = $( '#trade-list-table' );
+          var tradeTableHtml = tradeTable.html();
+
+          var teamTrades = data['transactionData']['teamTrades'];
+
+          tradeTableHtml += '<tbody>';
+
+          for( var tradeId in teamTrades ) {
+            var team = teamTrades[tradeId]['team'];
+
+            var sentTotal = 0.0;
+            for( var i = 0; i < teamTrades[tradeId]['sent'].length; i++ ) {
+              var player = teamTrades[tradeId]['sent'][i];
+              var playerName = player['firstName'] + ' ' + player['lastName'];
+              var position = player['position'];
+              var playerTeam = player['teamName'];
+              var points = player['points'];
+              var image = player['image'];
+
+              tradeTableHtml += '<tr><td class="text-center"><div class="avatar"><img src="' + image + '" class="img-avatar">';
+              tradeTableHtml += '</div></td><td><div>' + playerName + '</div><div class="small text-muted">';
+              tradeTableHtml += '<span>Traded to</span> | ' + team + '</div></td><td class="text-center">';
+              tradeTableHtml += '<div>' + position + '</div></td><td class="text-center">' + playerTeam + '</div></td>';
+              tradeTableHtml += '<td class="text-center"><div>' + points + '</div></td></tr>';
+              sentTotal += points;
+            }
+
+            var receivedTotal = 0.0;
+            for( var i = 0; i < teamTrades[tradeId]['received'].length; i++ ) {
+              var player = teamTrades[tradeId]['received'][i];
+              var playerName = player['firstName'] + ' ' + player['lastName'];
+              var position = player['position'];
+              var playerTeam = player['teamName'];
+              var points = player['points'];
+              var image = player['image'];
+
+              tradeTableHtml += '<tr><td class="text-center"><div class="avatar"><img src="' + image + '" class="img-avatar">';
+              tradeTableHtml += '</div></td><td><div>' + playerName + '</div><div class="small text-muted">';
+              tradeTableHtml += '<span>Received from</span> | ' + team + '</div></td><td class="text-center">';
+              tradeTableHtml += '<div>' + position + '</div></td><td class="text-center">' + playerTeam + '</div></td>';
+              tradeTableHtml += '<td class="text-center"><div>' + points + '</div></td></tr>';
+              receivedTotal += points;
+            }
+
+            var netResult = Math.round( ( ( receivedTotal - sentTotal ) * 100 ) / 100 );
+            if( netResult > 0 ) {
+              tradeTableHtml += '<tr><td></td><td><h5>' + teamTrades[tradeId]['date'] + '</h5></td><td></td><td></td><td class="text-center"><h5>+' + netResult + '</h5></td></tr>';
+            }
+            else {
+              tradeTableHtml += '<tr><td></td><td><h5>' + teamTrades[tradeId]['date'] + '</h5></td><td></td><td></td><td class="text-center"><h5>' + netResult + '</h5></td></tr>';
+            }
+          }
+
+          tradeTableHtml += '</tbody>';
+
+          tradeTable.html( tradeTableHtml );
+
+          function setLineups( matchupId ) {
+            var optimalLinupTable = $( '#optimal-lineup-table' ); 
+            var optimalLineupHtml = '';
+
+            var weekOtimalLineup = optimalLineups[matchupId];
+            var totalOptimalScore = 0.0;
+            for( var slot in weekOtimalLineup ) {
+              for( var j = 0; j < weekOtimalLineup[slot].length; j++ ) {
+                var playerName = weekOtimalLineup[slot][j]['firstName'] + ' ' + weekOtimalLineup[slot][j]['lastName'];
+                var team = weekOtimalLineup[slot][j]['city'] + ' ' + weekOtimalLineup[slot][j]['teamName'];
+                var position = weekOtimalLineup[slot][j]['position'];
+                var score = weekOtimalLineup[slot][j]['points'];
+                var image = weekOtimalLineup[slot][j]['image'];
+
+                optimalLineupHtml += '<tr><td>' + slot + '</td><td class="text-center"><div class="avatar">';
+                optimalLineupHtml += '<img src="' + image + '" class="img-avatar">';
+                optimalLineupHtml += '</div></td><td><div>' + playerName + '</div><div class="small text-muted">';
+                optimalLineupHtml += '<span>' + position + '</span> | ' + team + '</div>';
+                optimalLineupHtml += '</td><td>' + score + '</td></tr>';
+                totalOptimalScore += score;
+              }
+            }
+
+            var potentialScoreValue = document.getElementById( 'potential-score-value' );
+            potentialScoreValue.innerHTML = '';
+            potentialScoreValue.appendChild( document.createTextNode( Math.round( ( totalOptimalScore * 100 ) / 100 ) ) );
+
+            optimalLinupTable.html( optimalLineupHtml );
+
+            var optimalLinupTable = $( '#lineup-table' );
+            var optimalLineupHtml = '';
+
+            var weekOtimalLineup = teamLineups[matchupId];
+            totalActualScore = 0.0;
+            for( var slot in weekOtimalLineup ) {
+              for( var j = 0; j < weekOtimalLineup[slot].length; j++ ) {
+                var playerName = weekOtimalLineup[slot][j]['firstName'] + ' ' + weekOtimalLineup[slot][j]['lastName'];
+                var team = weekOtimalLineup[slot][j]['city'] + ' ' + weekOtimalLineup[slot][j]['teamName'];
+                var position = weekOtimalLineup[slot][j]['position'];
+                var score = weekOtimalLineup[slot][j]['points'];
+                var image = weekOtimalLineup[slot][j]['image'];
+
+                optimalLineupHtml += '<tr><td>' + slot + '</td><td class="text-center"><div class="avatar">';
+                optimalLineupHtml += '<img src="' + image + '" class="img-avatar">';
+                optimalLineupHtml += '</div></td><td><div>' + playerName + '</div><div class="small text-muted">';
+                optimalLineupHtml += '<span>' + position + '</span> | ' + team + '</div>';
+                optimalLineupHtml += '</td><td>' + score + '</td></tr>';
+                totalActualScore += score;
+              }
+            }
+
+            var actualScoreValue = document.getElementById( 'actual-score-value' );
+            actualScoreValue.innerHTML = '';
+            actualScoreValue.appendChild( document.createTextNode( Math.round( ( totalActualScore * 100 ) / 100 ) ) );
+
+            var actualScoreProgress = ( totalActualScore / totalOptimalScore ) * 100;
+            $( '#actual-score-progress' ).attr('style', 'width: ' + actualScoreProgress + '%');
+
+            optimalLinupTable.html( optimalLineupHtml );
+          }
+
+          var matchupPeriodPages = $( '#matchup-period-dropdown' );
+          var matchupPeriodPagesHtml = '';
+
+          for( var i = 0; i < Object.keys( teamLineups ).length; i++ ) {
+            matchupPeriod = i + 1;
+            matchupPeriodPagesHtml += '<button id="' + matchupPeriod + '" class="dropdown-item" type="button">' + matchupPeriod + '</button>';
+          }
+
+          matchupPeriodPages.html( matchupPeriodPagesHtml );
+
+          $( '#matchup-period-dropdown' ).on( 'click', function( e ) {
+            var id = e.target.attributes.getNamedItem( 'id' );
+            setLineups( id.value );
+            $( '#selected' ).text( id.value );
+          });
+        }
+      })
+    })( jQuery );
+
+  </script>
+
+</body>
+</html>

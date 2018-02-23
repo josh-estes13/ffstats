@@ -16,6 +16,13 @@ class DataStore:
 		for last_matchup_id, in self.cursor:
 			return last_matchup_id
 
+	def select_league_name(self, league_id, year):
+		sql = 'SELECT league_name FROM league WHERE league_id = %s AND year = %s;'
+		self.cursor.execute(sql, (league_id, year))
+		for name, in self.cursor:
+			return name
+		return False
+
 	def insert_team(self, team_data):
 		sql = 'INSERT INTO teams VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);'
 		self.cursor.execute(sql, tuple(team_data))
@@ -43,6 +50,7 @@ class DataStore:
 
 	def insert_roster_data(self, roster_data):
 		for roster in roster_data:
+			print(str(roster))
 			sql = 'INSERT INTO rosters VALUES(%s, %s, %s, %s, %s, %s, %s, %s);'
 			self.cursor.executemany(sql, roster)
 			self.connection.commit()
@@ -115,17 +123,17 @@ class DataStore:
 		self.cursor.execute(sql, (league_id, year))
 		for team_id, team_abbreviation, team_name, logo, total_transactions, trades, wins, losses, points_scored, points_against, standing in self.cursor:
 			team = dict()
-			team['TEAM'] = team_name
-			team['INITIALS'] = team_abbreviation
-			team['WINS'] = wins
-			team['LOSSES'] = losses
-			team['IMAGE'] = logo
-			team['RANK'] = standing
-			team['TRANSACTIONS'] = total_transactions
-			team['TRADES'] = trades
-			team['POINTS_FOR'] = points_scored
-			team['POINTS_AGAINST'] = points_against
-			team['ID'] = team_id
+			team['team'] = team_name
+			team['initials'] = team_abbreviation
+			team['wins'] = wins
+			team['losses'] = losses
+			team['image'] = logo
+			team['rank'] = standing
+			team['transactions'] = total_transactions
+			team['trades'] = trades
+			team['pointsFor'] = points_scored
+			team['pointsAgainst'] = points_against
+			team['id'] = team_id
 			teams.append(dict(team))
 		return teams
 
@@ -208,9 +216,10 @@ class DataStore:
 			trades[trade_id].append(dict(trade_item))
 		return trades
 
-	def select_points_from_addition(self, league_id, year, team_id, players):
+	def select_points_from_addition(self, league_id, year, team_id, items):
 		total_score = 0
-		for item in players:
+		players = dict()
+		for item in items:
 			player_id, date = item
 			sql = 'SELECT DISTINCT rosters.score, rosters.matchup_period_id FROM rosters INNER JOIN players ON rosters.player_id = players.player_id LEFT OUTER JOIN progames ON (players.team_id = progames.away_team_id OR players.team_id = progames.home_team_id) AND (rosters.matchup_period_id = progames.matchup_period_id) WHERE rosters.league_id = %s AND rosters.year = %s AND rosters.team_id = %s AND rosters.player_id = %s AND rosters.slot_id != 20 AND rosters.slot_id != 21 AND rosters.slot_id != 22 AND progames.date >= %s ORDER BY rosters.matchup_period_id ASC;'
 			self.cursor.execute(sql, (league_id, year, team_id, player_id, date))
@@ -219,9 +228,13 @@ class DataStore:
 				if current_matchup_id == None or current_matchup_id == matchup_id - 1:
 					current_matchup_id = matchup_id
 					total_score = total_score + score
+					if player_id not in players:
+						players[player_id] = self.select_player(player_id)
+						players[player_id]['points'] = 0.0
+					players[player_id]['points'] = players[player_id]['points'] + score
 				else:
 					break
-		return total_score
+		return total_score, players
 
 	def select_points_since_trade(self, league_id, year, player_id, date):
 		total_score = 0
@@ -245,8 +258,93 @@ class DataStore:
 
 	def select_eligible_players(self, league_id, year, team_id, matchup_period, slot):
 		players = list()
-		sql = 'SELECT eligibles.player_id, rosters.score FROM eligibles INNER JOIN rosters ON rosters.player_id = eligibles.player_id AND rosters.team_id = eligibles.team_id AND rosters.matchup_period_id = eligibles.matchup_period_id WHERE eligibles.league_id = %s AND eligibles.year = %s AND eligibles.team_id = %s AND eligibles.matchup_period_id = %s AND eligibles.eligible_slot = %s ORDER BY rosters.score DESC;'
-		self.cursor.execute(sql, (league_id, year, team_id, matchup_period, slot))
+		sql = 'SELECT eligibles.player_id, rosters.score FROM eligibles INNER JOIN rosters ON rosters.player_id = eligibles.player_id AND rosters.team_id = eligibles.team_id AND rosters.matchup_period_id = eligibles.matchup_period_id WHERE eligibles.league_id = %s AND rosters.league_id = %s AND eligibles.year = %s AND rosters.year = %s AND eligibles.team_id = %s AND rosters.team_id = %s AND eligibles.matchup_period_id = %s AND rosters.matchup_period_id = %s AND eligibles.eligible_slot = %s ORDER BY rosters.score DESC;'
+		self.cursor.execute(sql, (league_id, league_id, year, year, team_id, team_id, matchup_period, matchup_period, slot))
 		for player_id, score in self.cursor:
 			players.append(tuple((player_id, score)))
 		return tuple(players)
+
+	def select_total_points(self, league_id, year, team_id):
+		sql = 'SELECT points_scored FROM teams WHERE league_id = %s AND year = %s AND team_id = %s;'
+		self.cursor.execute(sql, (league_id, year, team_id))
+		for points_scored, in self.cursor:
+			return points_scored
+		return False
+
+	def select_team(self, league_id, year, team_id):
+		teams = list()
+		sql = 'SELECT team_abbreviation, team_name, logo, total_transactions, trades, wins, losses, points_scored, points_against, standing FROM teams WHERE league_id = %s AND year = %s AND team_id = %s;'
+		self.cursor.execute(sql, (league_id, year, team_id))
+		for team_abbreviation, team_name, logo, total_transactions, trades, wins, losses, points_scored, points_against, standing in self.cursor:
+			team = dict()
+			team['team'] = team_name
+			team['initials'] = team_abbreviation
+			team['wins'] = wins
+			team['losses'] = losses
+			team['image'] = logo
+			team['rank'] = standing
+			team['transactions'] = total_transactions
+			team['trades'] = trades
+			team['pointsFor'] = points_scored
+			team['pointsAgainst'] = points_against
+			team['id'] = team_id
+			return team
+
+	def select_player(self, player_id):
+		sql = 'SELECT players.first_name, players.last_name, positions.position, proteams.team_city, proteams.team_name, players.image FROM players LEFT JOIN positions ON players.position_id = positions.position_id LEFT JOIN proteams ON players.team_id = proteams.team_id WHERE players.player_id = %s;'
+		self.cursor.execute(sql, (player_id,))
+		for first_name, last_name, position, team_city, team_name, image in self.cursor:
+			player = dict()
+			player['firstName'] = first_name
+			player['lastName'] = last_name
+			player['position'] = position
+			player['city'] = team_city
+			player['teamName'] = team_name
+			player['image'] = image
+			return player
+
+	def select_slot(self, slot_id):
+		sql = 'SELECT position FROM slots WHERE slot_id = %s;'
+		self.cursor.execute(sql, (slot_id,))
+		for position, in self.cursor:
+			return position
+		return False
+
+	def select_all_starters(self, league_id, year, team_id):
+		players = dict()
+		sql = 'SELECT player_id, score, projected_points FROM rosters WHERE league_id = %s AND year = %s AND team_id = %s AND slot_id != 20 AND slot_id != 21;'
+		self.cursor.execute(sql, (league_id, year, team_id))
+		for player_id, score, projected_points in self.cursor:
+			if player_id not in players:
+				players[player_id] = {'score': 0.0, 'projected': 0.0}
+			players[player_id]['score'] = players[player_id]['score'] + score
+			players[player_id]['projected'] = players[player_id]['projected'] + projected_points
+		return players
+
+	def select_starter_by_matchup(self, league_id, year, team_id):
+		players = dict()
+		sql = 'SELECT player_id, matchup_period_id, slot_id, score FROM rosters WHERE slot_id != 20 AND slot_id != 21 AND league_id = %s AND year = %s AND team_id = %s;'
+		self.cursor.execute(sql, (league_id, year, team_id))
+		for player_id, matchup_id, slot_id, score in self.cursor:
+			if matchup_id not in players:
+				players[matchup_id] = dict()
+			if slot_id not in players[matchup_id]:
+				players[matchup_id][slot_id] = list()
+			players[matchup_id][slot_id].append(tuple((player_id, score)))
+		return players
+
+	def select_team_name(self, league_id, year, team_id):
+		sql = 'SELECT team_name FROM teams WHERE league_id = %s AND year = %s AND team_id = %s;'
+		self.cursor.execute(sql, (league_id, year, team_id))
+		for team_name, in self.cursor:
+			return team_name
+		return False
+
+	def select_player_starts(self, league_id, year, team_id, player_id):
+		sql = 'SELECT COUNT(matchup_period_id) FROM rosters WHERE league_id = %s AND year = %s AND team_id = %s AND player_id = %s AND slot_id != 20 AND slot_id != 21;'
+		self.cursor.execute(sql, (league_id, year, team_id, player_id))
+		for count, in self.cursor:
+			return count
+		return False
+
+

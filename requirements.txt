@@ -1,0 +1,7 @@
+Flask==0.12.2
+Jinja2==2.6
+Werkzeug==0.10.4
+requests==2.18.4
+psycopg2-binary==2.7.4
+celery==4.1.0
+redis==2.10.6
