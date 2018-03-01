@@ -59,8 +59,20 @@
             </div>
             <div class="row">
               <div class="col-lg-12">
+                <div class="dropdown">
+                  <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Choose Season
+                  </button>
+                  <div id="seasons-dropdown" class="dropdown-menu collapse" aria-labelledby="dropdownMenuButton">
+                    
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-lg-12">
                 <div>
-                  <button type="button" data-toggle="modal" data-target="#searching-modal" class="btn btn-primary px-4" id="league-search-btn">Go</button>
+                  <button type="button" class="btn btn-primary px-4" id="league-search-btn">Go</button>
                 </div>
               </div>
             </div>
@@ -72,22 +84,46 @@
       </div>
     </div>
   </div>
+
   <div class="modal fade" id="searching-modal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true" data-keyboard="false" data-backdrop="static">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
           <h4 class="modal-title"></h4>
+          <p id="progress-status"></p>
+          <div class="small text-muted">The first time can take a couple minutes</div>
         </div>
         <div class="modal-body">
-          <p id="progress-status">Searching for your league...</p>
-          <div id="sub-text" class="small text-muted">This could take a minute on the initial analysis</div>
-          <div class="progress">
-            <div id="progressbar" class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%">
+          <div class="row">
+            <div class="col-sm-12">
+              <div class="progress">
+                <div id="progressbar1" class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%"">
+                </div>
+              </div>
             </div>
           </div>
+          <p>
+          <div class="row">
+            <div class="col-sm-12">
+              <div class="progress">
+                <div id="progressbar2" class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%x">
+                </div>
+              </div>
+            </div>
+          </div>
+          <p>
+          <div class="row">
+            <div class="col-sm-12">
+              <div class="progress">
+                <div id="progressbar3" class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%">
+                </div>
+              </div>
+            </div>
+          </div>
+            
         </div>
         <div class="modal-footer">
-          
+          <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#searching-modal">Cancel</button>
         </div>
       </div>
     </div>
@@ -104,7 +140,7 @@
           <div id="sub-text" class="small text-muted">Make sure you entered your league ID correctly and confirm that your league is public</div>
         </div>
         <div class="modal-footer" id="invalid-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="#error-modal"></button>
+          <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#error-modal">Ok</button>
         </div>
       </div>
     </div>
@@ -126,94 +162,139 @@
   <script type=text/javascript>
     ( function( $ ) {
 
+      var leagueId = '';
+      var seasonId = '';
+
+      $( '#seasons-dropdown' ).hide();
+      $( '#dropdownMenuButton' ).hide();
+
       $( '#league-search-btn' ).on( 'click', function( e ) {
 
-        leagueId = $( 'input[name="league-id-input"]' ).val();
+        leagueId = $( 'input[name="league-id-input"]' ).val();      
 
         $.ajax({
-          type: "GET",
-          url: "/status/",
-          contentType: "application/json; charset=utf-8",
+          type: 'GET',
+          url: '/seasons/',
+          contentType: 'application/json; charset=utf-8',
           data: { leagueId: leagueId },
           success: function( data ) {
+            if( data['status'] ) {
+              var seasons = data['seasons'];
 
-            var progressText = document.getElementById( 'progress-status' );
-            var progressPercentage = 0;
+              var seasonsDropdown = $( '#seasons-dropdown' );
+              var seasonsDopdownHtml = '';
 
-            if( data['leagueStatus'] ) {
-              progressText.innerHTML = '';
-              progressText.appendChild( document.createTextNode( 'League Found' ) );
-
-              if( data['stored'] )
-              {
-                var timerId, percent;
-                // reset progress bar
-                percent = 0;
-                $( '#progressbar' ).attr( 'style', 'width: ' + percent + '%' );
-                $( '#progressbar' ).attr( 'aria-valuenow', percent );
-
-
-                timerId = setInterval( function() {
-                  // increment progress bar
-                  percent += 1;
-                  $( '#progressbar' ).attr( 'style', 'width: ' + percent + '%' );
-                  $( '#progressbar' ).attr( 'aria-valuenow', percent );
-
-                  // complete
-                  if (percent >= 100) {
-                    clearInterval(timerId);
-                    window.location.href = '/league/?leagueId=' + leagueId;
-                  }
-
-                }, 10);
+              for( var i = 0; i < seasons.length; i++ ) {
+                season = seasons[i];
+                seasonsDopdownHtml += '<a id="' + season + '" class="dropdown-item" href="#">' + season + '</a>';
               }
-              else
-              {
-                var timerId, percent;
-                // reset progress bar
-                percent = 0;
-                $( '#progressbar' ).attr( 'style', 'width: ' + percent + '%' );
-                $( '#progressbar' ).attr( 'aria-valuenow', percent );
 
+              seasonsDropdown.html( seasonsDopdownHtml );
+              $( '#league-search-btn' ).hide();
+              $( '#seasons-dropdown' ).show();
+              $( '#dropdownMenuButton' ).show();
 
-                timerId = setInterval( function() {
-                  // increment progress bar
-                  percent += 1;
-                  $( '#progressbar' ).attr( 'style', 'width: ' + percent + '%' );
-                  $( '#progressbar' ).attr( 'aria-valuenow', percent );
+              $( '#seasons-dropdown' ).on( 'click', function( e ) {
+                var id = e.target.attributes.getNamedItem( 'id' );
+                seasonId = id.value;
+                $( '#dropdownMenuButton' ).text( seasonId );
+                fetchLeague( leagueId, seasonId );
+              });
 
-                  if( percent > 5 && percent < 30 ) {
-                    progressText.innerHTML = '';
-                    progressText.appendChild( document.createTextNode( 'Compiling League Data' ) );
-                  }
-
-                  if( percent > 30 && percent < 85 ) {
-                    progressText.innerHTML = '';
-                    progressText.appendChild( document.createTextNode( 'Analyzing Results' ) );
-                  }
-
-                  if( percent > 85) {
-                    progressText.innerHTML = '';
-                    progressText.appendChild( document.createTextNode( 'Finalizing...' ) );
-                  }
-
-                  // complete
-                  if (percent >= 100) {
-                    clearInterval(timerId);
-                    window.location.href = '/league/?leagueId=' + leagueId;
-                  }
-
-                }, 1000);
-              }
+              $( '#league-id-input' ).on( 'input', function() {
+                if( $( '#seasons-dropdown' ).is( ':visible' ) ) {
+                  $( '#seasons-dropdown' ).hide();
+                  $( '#dropdownMenuButton' ).hide();
+                  $( '#league-search-btn' ).show();
+                }
+              });
             }
-            else 
-            {
-              $( '#searching-modal' ).modal( 'toggle' );
+            else {
               $( '#error-modal' ).modal( 'toggle' );
             }
+          },
+          error: function() {
+            $( '#error-modal' ).modal( 'toggle' );
           }
         });
       });
+
+      function fetchLeague( leagueId, seasonId ) {
+        $( '#searching-modal' ).modal( 'toggle' );
+
+        $.ajax({
+          type: 'GET',
+          url: '/state/',
+          contentType: 'application/json; charset=utf-8',
+          data: { leagueId: leagueId, seasonId: seasonId },
+          success: function( data, status, request ) {
+            status_url = request.getResponseHeader( 'Location' );
+            update_progress( status_url );
+          },
+          error: function() {
+            $( '#error-modal' ).modal( 'toggle' );
+          }
+        });
+
+        function update_progress( status_url ) {
+
+          var progressText = document.getElementById( 'progress-status' );
+          var timerId;
+          var percent1 = 0.0;
+          var percent2 = 0.0;
+          var percent3 = 0.0;
+
+          timerId = setInterval( function() {
+
+            $.getJSON( status_url, function( data ) {
+
+              progressText.innerHTML = '';
+              progressText.appendChild( document.createTextNode( data['status'] ) );
+
+              if( data['current'] <= 15 ) {
+                percent1 += 1;
+              }
+              if( data['current'] > 15 && data['current'] <= 75 ) {
+                percent1 = 100;
+                percent2 += .5;
+              }
+              if( data['current'] > 75 ) {
+                percent2 = 100;
+                percent3 += .5;
+              }
+              if( data['current'] > 99 ) {
+                percent3 = 99;
+              }
+
+              $( '#progressbar1' ).attr( 'style', 'width: ' + percent1 + '%' );
+              $( '#progressbar1' ).attr( 'aria-valuenow', percent1 );
+
+              $( '#progressbar2' ).attr( 'style', 'width: ' + percent2 + '%' );
+              $( '#progressbar2' ).attr( 'aria-valuenow', percent2 );
+
+              $( '#progressbar3' ).attr( 'style', 'width: ' + percent3 + '%' );
+              $( '#progressbar3' ).attr( 'aria-valuenow', percent3 );
+
+              if ( data['state'] != 'PENDING' && data['state'] != 'PROGRESS' ) {
+
+                if ( 'result' in data ) {
+                  percent3 = 100;
+                  $( '#progressbar3' ).attr( 'style', 'width: ' + percent3 + '%' );
+                  $( '#progressbar3' ).attr( 'aria-valuenow', percent3 );
+
+                  clearInterval(timerId);
+                  window.location.href = '/league/?leagueId=' + leagueId + '&seasonId=' + seasonId;
+                }
+                else {
+                  clearInterval(timerId);
+                  $( '#searching-modal' ).modal( 'toggle' );
+                  $( '#error-modal' ).modal( 'toggle' );
+                }
+              }
+            });
+          }, 500);
+        }
+      }
     })( jQuery );
   </script>
 

@@ -5,6 +5,18 @@ class DataStore:
 		self.connection = connection
 		self.cursor = cursor
 
+	def insert_data_status(self, league_id, year, status):
+		sql = 'INSERT INTO status VALUES(%s, %s, %s);'
+		self.cursor.execute(sql, (league_id, year, status))
+		self.connection.commit()
+
+	def select_data_status(self, league_id, year):
+		sql = 'SELECT data_stored FROM status WHERE league_id = %s AND year = %s;'
+		self.cursor.execute(sql, (league_id, year))
+		for data_stored, in self.cursor:
+			return data_stored
+		return False
+
 	def insert_league(self, league_data):
 		sql = 'INSERT INTO league VALUES(%s, %s, %s, %s, %s);'
 		self.cursor.execute(sql, tuple(league_data))
@@ -50,7 +62,6 @@ class DataStore:
 
 	def insert_roster_data(self, roster_data):
 		for roster in roster_data:
-			print(str(roster))
 			sql = 'INSERT INTO rosters VALUES(%s, %s, %s, %s, %s, %s, %s, %s);'
 			self.cursor.executemany(sql, roster)
 			self.connection.commit()
@@ -346,5 +357,42 @@ class DataStore:
 		for count, in self.cursor:
 			return count
 		return False
+
+	def clear_league_data(self, league_id, year):
+		sql = 'DELETE FROM league WHERE league_id = %s AND year = %s;'
+		self.cursor.execute(sql, (league_id, year))
+		self.connection.commit()
+
+		sql = 'DELETE FROM rosters WHERE league_id = %s AND year = %s;'
+		self.cursor.execute(sql, (league_id, year))
+		self.connection.commit()
+
+		sql = 'DELETE FROM matchups WHERE league_id = %s AND year = %s;'
+		self.cursor.execute(sql, (league_id, year))
+		self.connection.commit()
+
+		sql = 'DELETE FROM teams WHERE league_id = %s AND year = %s;'
+		self.cursor.execute(sql, (league_id, year))
+		self.connection.commit()
+
+		sql = 'DELETE FROM progames WHERE league_id = %s AND year = %s;'
+		self.cursor.execute(sql, (league_id, year))
+		self.connection.commit()
+
+		sql = 'DELETE FROM trades WHERE league_id = %s AND year = %s;'
+		self.cursor.execute(sql, (league_id, year))
+		self.connection.commit()
+
+		sql = 'DELETE FROM adds WHERE league_id = %s AND year = %s;'
+		self.cursor.execute(sql, (league_id, year))
+		self.connection.commit()
+
+		sql = 'DELETE FROM drops WHERE league_id = %s AND year = %s;'
+		self.cursor.execute(sql, (league_id, year))
+		self.connection.commit()
+
+		sql = 'DELETE FROM eligibles WHERE league_id = %s AND year = %s;'
+		self.cursor.execute(sql, (league_id, year))
+		self.connection.commit()
 
 

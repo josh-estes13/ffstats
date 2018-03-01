@@ -100,18 +100,20 @@
 
   <script type=text/javascript>
     var $LEAGUE_ID = {{ leagueId|tojson|safe }};
+    var $SEASON_ID = {{ seasonId|tojson|safe }};
   </script>
 
   <script type=text/javascript>
     ( function( $ ) {
       $( '#team-list' ).hide();
       leagueId = $LEAGUE_ID;
+      seasonId = $SEASON_ID;
 
       $.ajax({
         type: "GET",
         url: "/leagueId/",
         contentType: "application/json; charset=utf-8",
-        data: { leagueId: leagueId },
+        data: { leagueId: leagueId, seasonId: seasonId },
         success: function( data ) {
           $( '#league-id-form' ).hide();
 
@@ -141,11 +143,11 @@
             pointsAgainst = teams[i]['pointsAgainst'];
             teamId = teams[i]['id'];
 
-            teamsNavHtml += '<li class="nav-item"><a class="nav-link" href="/team/?id=' + leagueId + '&team=' + teamId + '"><i class="icon-puzzle"></i>' + name + '</a></li>';
+            teamsNavHtml += '<li class="nav-item"><a class="nav-link" href="/team/?leagueId=' + leagueId + '&team=' + teamId + '&seasonId=' + seasonId + '"><i class="icon-puzzle"></i>' + name + '</a></li>';
 
             teamsTableHtml += '<tr>';
             teamsTableHtml += '<td class="text-center"><div class="avatar"><img src=' + image + ' class="img-avatar"></div></td>';
-            teamsTableHtml += '<td><div><a href="/team/?id=' + leagueId + '&team=' + teamId + '">' + name + '</a></div><div class="small text-muted"><span>New</span> | Registered: Jan 1, 2015</div></td>';
+            teamsTableHtml += '<td><div><a href="/team/?leagueId=' + leagueId + '&team=' + teamId + '&seasonId=' + seasonId + '">' + name + '</a></div><div class="small text-muted"><span>New</span> | Registered: Jan 1, 2015</div></td>';
             teamsTableHtml += '<td><div class="text-center">' + initials + '</div></td>';
             teamsTableHtml += '<td><div class="text-center">' + wins + '</div></td>';
             teamsTableHtml += '<td><div class="text-center">' + losses + '</div></td>';

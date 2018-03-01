@@ -15,7 +15,7 @@
   <meta name="author" content="Łukasz Holeczek">
   <meta name="keyword" content="Bootstrap,Admin,Template,Open,Source,AngularJS,Angular,Angular2,Angular 2,Angular4,Angular 4,jQuery,CSS,HTML,RWD,Dashboard,React,React.js,Vue,Vue.js">
   <link rel="shortcut icon" href="img/favicon.png">
-  <title>LeagueStats - ESPN Fantasy Football League Analysis</title>
+  <title>ffstats - ESPN Fantasy Football League Analysis</title>
 
   <!-- Icons -->
   <link href="../node_modules/flag-icon-css/css/flag-icon.min.css" rel="stylesheet">
@@ -65,7 +65,7 @@
 
       <!-- Breadcrumb -->
       <ol class="breadcrumb">
-        <li class="breadcrumb-item" id=league-name></li>   
+        <li class="breadcrumb-item" id=league-name></li>
       </ol>
 
       <div class="container-fluid">
@@ -190,7 +190,6 @@
             </div>
           </div>
 
-          
           <div class="row">
             <div class="col-lg-6">
               <div class="card">
@@ -343,6 +342,7 @@
                           <th class="text-center">Projected</th>
                           <th class="text-center">Games Started</th>
                           <th class="text-center">Average</th>
+                          <th class="text-center">Acquisition</th>
                         </tr>
                       </thead>
                       <tbody id="player-list-table">
@@ -367,6 +367,7 @@
   <script type=text/javascript>
     var $LEAGUE_ID = {{ leagueId|tojson|safe }};
     var $TEAM_ID = {{ teamId|tojson|safe }};
+    var $SEASON_ID = {{ seasonId|tojson|safe }};
   </script>
 
   <script src="../node_modules/jquery/dist/jquery.min.js"></script>
@@ -616,20 +617,153 @@
   </script>
 
   <script type="text/javascript">
+    function setLineups( matchupId, optimalLineups, teamLineups ) {
+
+      var playersInTeamLineup = [];
+      var teamLineup = teamLineups[matchupId];
+      for( var slot in teamLineup ) {
+        for( var j = 0; j < teamLineup[slot].length; j++ ) {
+          var playerName = teamLineup[slot][j]['firstName'] + ' ' + teamLineup[slot][j]['lastName'];
+          playersInTeamLineup.push( playerName );
+        }
+      }
+
+      var commonLineup = [];
+      var weekOtimalLineup = optimalLineups[matchupId];
+      for( var slot in weekOtimalLineup ) {
+        for( var j = 0; j < weekOtimalLineup[slot].length; j++ ) {
+          var playerName = weekOtimalLineup[slot][j]['firstName'] + ' ' + weekOtimalLineup[slot][j]['lastName'];
+          var index = playersInTeamLineup.indexOf( playerName );
+          if( index > -1 ) {
+            commonLineup.push( playerName );
+          }
+        }
+      }
+
+      var optimalLinupTable = $( '#optimal-lineup-table' ); 
+      var optimalLineupHtml = '';
+
+      var weekOtimalLineup = optimalLineups[matchupId];
+      var totalOptimalScore = 0.0;
+      for( var slot in weekOtimalLineup ) {
+        for( var j = 0; j < weekOtimalLineup[slot].length; j++ ) {
+          var playerName = weekOtimalLineup[slot][j]['firstName'] + ' ' + weekOtimalLineup[slot][j]['lastName'];
+          var team = weekOtimalLineup[slot][j]['city'] + ' ' + weekOtimalLineup[slot][j]['teamName'];
+          var position = weekOtimalLineup[slot][j]['position'];
+          var score = weekOtimalLineup[slot][j]['points'];
+          var image = weekOtimalLineup[slot][j]['image'];
+
+          optimalLineupHtml += '<tr><td>' + slot + '</td><td class="text-center"><div class="avatar">';
+          optimalLineupHtml += '<img src="' + image + '" class="img-avatar">';
+          optimalLineupHtml += '</div></td><td><div>' + playerName + '</div><div class="small text-muted">';
+          optimalLineupHtml += '<span>' + position + '</span> | ' + team + '</div>';
+
+          var index = commonLineup.indexOf( playerName );
+          if( index == -1 ) {
+            optimalLineupHtml += '<div class="progress progress-xs"><div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div></div>';
+          }
+          optimalLineupHtml += '</td><td>' + score + '</td></tr>';
+          totalOptimalScore += score;
+        }
+      }
+
+      var potentialScoreValue = document.getElementById( 'potential-score-value' );
+      potentialScoreValue.innerHTML = '';
+      potentialScoreValue.appendChild( document.createTextNode( Math.round( ( totalOptimalScore * 100 ) / 100 ) ) );
+
+      optimalLinupTable.html( optimalLineupHtml );
+
+      var optimalLinupTable = $( '#lineup-table' );
+      var optimalLineupHtml = '';
+
+      var weekOtimalLineup = teamLineups[matchupId];
+      totalActualScore = 0.0;
+      for( var slot in weekOtimalLineup ) {
+        for( var j = 0; j < weekOtimalLineup[slot].length; j++ ) {
+          var playerName = weekOtimalLineup[slot][j]['firstName'] + ' ' + weekOtimalLineup[slot][j]['lastName'];
+          var team = weekOtimalLineup[slot][j]['city'] + ' ' + weekOtimalLineup[slot][j]['teamName'];
+          var position = weekOtimalLineup[slot][j]['position'];
+          var score = weekOtimalLineup[slot][j]['points'];
+          var image = weekOtimalLineup[slot][j]['image'];
+
+          optimalLineupHtml += '<tr><td>' + slot + '</td><td class="text-center"><div class="avatar">';
+          optimalLineupHtml += '<img src="' + image + '" class="img-avatar">';
+          optimalLineupHtml += '</div></td><td><div>' + playerName + '</div><div class="small text-muted">';
+          optimalLineupHtml += '<span>' + position + '</span> | ' + team + '</div>';
+
+          var index = commonLineup.indexOf( playerName );
+          if( index == -1 ) {
+            optimalLineupHtml += '<div class="progress progress-xs"><div class="progress-bar bg-danger" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div></div>';
+          }
+          optimalLineupHtml += '</td><td>' + score + '</td></tr>';
+          totalActualScore += score;
+        }
+      }
+
+      var actualScoreValue = document.getElementById( 'actual-score-value' );
+      actualScoreValue.innerHTML = '';
+      actualScoreValue.appendChild( document.createTextNode( Math.round( ( totalActualScore * 100 ) / 100 ) ) );
+
+      var actualScoreProgress = ( totalActualScore / totalOptimalScore ) * 100;
+      $( '#actual-score-progress' ).attr('style', 'width: ' + actualScoreProgress + '%');
+
+      optimalLinupTable.html( optimalLineupHtml );
+    }
+  </script>
+
+  <script type="text/javascript">
+    function setPlayerList( playerList, tradedPlayers, addedPlayers ) {
+      var tableContainer = $( '#player-list-table' );
+      var playerListHtml = '';
+
+      for( var player in playerList ) {
+        if( playerList[player]['starts'] > 0 ) {
+          playerListHtml += '<tr><td class="text-center"><div class="avatar">';
+          playerListHtml += '<img src="' + playerList[player]['image'] + '" class="img-avatar">';
+          playerListHtml += '</div></td><td>';
+          playerListHtml += '<div>' + playerList[player]['firstName'] + ' ' + playerList[player]['lastName'] + '</div>';
+          playerListHtml += '<div class="small text-muted">';
+          playerListHtml += '<span>' + playerList[player]['position'] + '</span> | ' + playerList[player]['city'] + ' ' + playerList[player]['teamName'];
+          playerListHtml += '</div></td><td class="text-center"><div>' + playerList[player]['points'] + '</div>';
+          playerListHtml += '</td>';
+
+          playerListHtml += '<td class="text-center"><div>' + playerList[player]['projected'] + '</div>';
+          playerListHtml += '</td>';
+
+          playerListHtml += '<td class="text-center"><div>' + playerList[player]['starts'] + '</div>';
+          playerListHtml += '</td>';
+
+
+          var average = parseFloat( playerList[player]['points'] / playerList[player]['starts'] );
+          average = Math.round( ( average * 100 ) / 100 );
+
+          playerListHtml += '<td class="text-center"><div>' + average + '</div></td>';
+
+          playerListHtml += '<td class="text-center"><div>Drafted</div></td>';
+          playerListHtml += '</tr>';
+        }
+      }
+
+      tableContainer.html( playerListHtml );
+    }
+  </script>
+
+  <script type="text/javascript">
     (function( $ ) {
 
       $( '#team-data' ).hide();
 
       var leagueId = $LEAGUE_ID;
       var teamId = $TEAM_ID;
+      var seasonId = $SEASON_ID;
 
-      $( '#league-home-link' ).attr( 'href', '/league/?leagueId=' + leagueId );
+      $( '#league-home-link' ).attr( 'href', '/league/?leagueId=' + leagueId + '&seasonId=' + seasonId );
 
       $.ajax({
         type: "GET",
         url: "/data/",
         contentType: "application/json; charset=utf-8",
-        data: { id: leagueId, team: teamId },
+        data: { id: leagueId, team: teamId, season: seasonId },
         success: function( data ) {
 
           var teamName = data['teamData']['team'];
@@ -705,38 +839,9 @@
           var addedPlayers = data['transactionData']['waiverPlayers'];
           var playerList = data['transactionData']['playerList'];
 
-          var tableContainer = $( '#player-list-table' );
-          var playerListHtml = '';
+          setPlayerList( playerList, tradedPlayers, addedPlayers );
 
-          for( var player in playerList ) {
-            if( playerList[player]['starts'] > 0 ) {
-              playerListHtml += '<tr><td class="text-center"><div class="avatar">';
-              playerListHtml += '<img src="' + playerList[player]['image'] + '" class="img-avatar">';
-              playerListHtml += '</div></td><td>';
-              playerListHtml += '<div>' + playerList[player]['firstName'] + ' ' + playerList[player]['lastName'] + '</div>';
-              playerListHtml += '<div class="small text-muted">';
-              playerListHtml += '<span>' + playerList[player]['position'] + '</span> | ' + playerList[player]['city'] + ' ' + playerList[player]['teamName'];
-              playerListHtml += '</div></td><td class="text-center"><div>' + playerList[player]['points'] + '</div>';
-              playerListHtml += '</td>';
-
-              playerListHtml += '<td class="text-center"><div>' + playerList[player]['projected'] + '</div>';
-              playerListHtml += '</td>';
-
-              playerListHtml += '<td class="text-center"><div>' + playerList[player]['starts'] + '</div>';
-              playerListHtml += '</td>';
-
-
-              var average = parseFloat( playerList[player]['points'] / playerList[player]['starts'] );
-              average = Math.round( ( average * 100 ) / 100 );
-
-              playerListHtml += '<td class="text-center"><div>' + average + '</div>';
-              playerListHtml += '</td></tr>';
-            }
-          }
-
-          tableContainer.html( playerListHtml );
-
-          setLineups( 1 );
+          setLineups( 1, optimalLineups, teamLineups );
 
           var tradeTable = $( '#trade-list-table' );
           var tradeTableHtml = tradeTable.html();
@@ -784,10 +889,10 @@
 
             var netResult = Math.round( ( ( receivedTotal - sentTotal ) * 100 ) / 100 );
             if( netResult > 0 ) {
-              tradeTableHtml += '<tr><td></td><td><h5>' + teamTrades[tradeId]['date'] + '</h5></td><td></td><td></td><td class="text-center"><h5>+' + netResult + '</h5></td></tr>';
+              tradeTableHtml += '<tr><td></td><td><h5>' + teamTrades[tradeId]['date'] + '</h5><div class="progress progress-xs"><div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div></div></td><td></td><td></td><td class="text-center"><h5>+' + netResult + '</h5></td></tr>';
             }
             else {
-              tradeTableHtml += '<tr><td></td><td><h5>' + teamTrades[tradeId]['date'] + '</h5></td><td></td><td></td><td class="text-center"><h5>' + netResult + '</h5></td></tr>';
+              tradeTableHtml += '<tr><td></td><td><h5>' + teamTrades[tradeId]['date'] + '</h5><div class="progress progress-xs"><div class="progress-bar bg-danger" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div></div></td><td></td><td></td><td class="text-center"><h5>' + netResult + '</h5></td></tr>';
             }
           }
 
@@ -795,66 +900,7 @@
 
           tradeTable.html( tradeTableHtml );
 
-          function setLineups( matchupId ) {
-            var optimalLinupTable = $( '#optimal-lineup-table' ); 
-            var optimalLineupHtml = '';
-
-            var weekOtimalLineup = optimalLineups[matchupId];
-            var totalOptimalScore = 0.0;
-            for( var slot in weekOtimalLineup ) {
-              for( var j = 0; j < weekOtimalLineup[slot].length; j++ ) {
-                var playerName = weekOtimalLineup[slot][j]['firstName'] + ' ' + weekOtimalLineup[slot][j]['lastName'];
-                var team = weekOtimalLineup[slot][j]['city'] + ' ' + weekOtimalLineup[slot][j]['teamName'];
-                var position = weekOtimalLineup[slot][j]['position'];
-                var score = weekOtimalLineup[slot][j]['points'];
-                var image = weekOtimalLineup[slot][j]['image'];
-
-                optimalLineupHtml += '<tr><td>' + slot + '</td><td class="text-center"><div class="avatar">';
-                optimalLineupHtml += '<img src="' + image + '" class="img-avatar">';
-                optimalLineupHtml += '</div></td><td><div>' + playerName + '</div><div class="small text-muted">';
-                optimalLineupHtml += '<span>' + position + '</span> | ' + team + '</div>';
-                optimalLineupHtml += '</td><td>' + score + '</td></tr>';
-                totalOptimalScore += score;
-              }
-            }
-
-            var potentialScoreValue = document.getElementById( 'potential-score-value' );
-            potentialScoreValue.innerHTML = '';
-            potentialScoreValue.appendChild( document.createTextNode( Math.round( ( totalOptimalScore * 100 ) / 100 ) ) );
-
-            optimalLinupTable.html( optimalLineupHtml );
-
-            var optimalLinupTable = $( '#lineup-table' );
-            var optimalLineupHtml = '';
-
-            var weekOtimalLineup = teamLineups[matchupId];
-            totalActualScore = 0.0;
-            for( var slot in weekOtimalLineup ) {
-              for( var j = 0; j < weekOtimalLineup[slot].length; j++ ) {
-                var playerName = weekOtimalLineup[slot][j]['firstName'] + ' ' + weekOtimalLineup[slot][j]['lastName'];
-                var team = weekOtimalLineup[slot][j]['city'] + ' ' + weekOtimalLineup[slot][j]['teamName'];
-                var position = weekOtimalLineup[slot][j]['position'];
-                var score = weekOtimalLineup[slot][j]['points'];
-                var image = weekOtimalLineup[slot][j]['image'];
-
-                optimalLineupHtml += '<tr><td>' + slot + '</td><td class="text-center"><div class="avatar">';
-                optimalLineupHtml += '<img src="' + image + '" class="img-avatar">';
-                optimalLineupHtml += '</div></td><td><div>' + playerName + '</div><div class="small text-muted">';
-                optimalLineupHtml += '<span>' + position + '</span> | ' + team + '</div>';
-                optimalLineupHtml += '</td><td>' + score + '</td></tr>';
-                totalActualScore += score;
-              }
-            }
-
-            var actualScoreValue = document.getElementById( 'actual-score-value' );
-            actualScoreValue.innerHTML = '';
-            actualScoreValue.appendChild( document.createTextNode( Math.round( ( totalActualScore * 100 ) / 100 ) ) );
-
-            var actualScoreProgress = ( totalActualScore / totalOptimalScore ) * 100;
-            $( '#actual-score-progress' ).attr('style', 'width: ' + actualScoreProgress + '%');
-
-            optimalLinupTable.html( optimalLineupHtml );
-          }
+          
 
           var matchupPeriodPages = $( '#matchup-period-dropdown' );
           var matchupPeriodPagesHtml = '';
@@ -868,7 +914,7 @@
 
           $( '#matchup-period-dropdown' ).on( 'click', function( e ) {
             var id = e.target.attributes.getNamedItem( 'id' );
-            setLineups( id.value );
+            setLineups( id.value, optimalLineups, teamLineups );
             $( '#selected' ).text( id.value );
           });
         }

@@ -23,6 +23,7 @@ class GameData:
 				request = self.request_data(matchup_period_id, team_id)
 
 				status = request.status_code
+				print('STATUS: ' + str(status))
 				if status != 200:
 					self.success = False
 
@@ -118,4 +119,6 @@ class GameData:
 		params['seasonId'] = self.year
 		params['matchupPeriodId'] = matchup_period_id
 		params['teamId'] = team_id
+		print('-------PARAMS-------')
+		print('MATCHUP ID: ' + str(matchup_period_id) + ' TEAM ID: ' + str(team_id))
 		return requests.get('%sboxscore' % (self.ENDPOINT, ), params=params)
