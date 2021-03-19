@@ -1,5 +1,5 @@
 Flask==0.12.2
-Jinja2==2.6
+Jinja2==2.11.3
 Werkzeug==0.10.4
 requests==2.18.4
 psycopg2-binary==2.7.4
