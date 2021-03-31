@@ -6,4 +6,4 @@ psycopg2-binary==2.7.4
 celery==4.1.0
 redis==2.10.6
 BeautifulSoup4==4.4.0
-lxml==3.6.0
+lxml==4.6.3
